@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador Bíblico 3D</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#10121b;color:#fff;font-family:Arial,sans-serif}
+header{background:#202438;padding:22px;text-align:center}
+h1{color:#e8c27a;margin:5px}
+main{max-width:850px;margin:auto;padding:18px}
+.card{background:#202438;padding:18px;border-radius:14px;margin:15px 0}
+input,textarea,select{width:100%;padding:13px;margin:8px 0;background:#111522;color:white;border:1px solid #555;border-radius:8px}
+button{background:#b58b48;color:#111;padding:13px;border:0;border-radius:8px;font-weight:bold;margin:5px 3px;cursor:pointer}
+.scene{background:#30364c;padding:15px;border-radius:10px;margin:12px 0}
+.small{color:#c5c8d4;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+<h1>GENERADOR BÍBLICO 3D</h1>
+<p>Historias bíblicas con apariencia cinematográfica</p>
+</header>
+<main>
+<div class="card">
+<h2>🎬 Crear una producción</h2>
+<label>Nombre de la historia</label>
+<input id="story" value="Rut y Noemí">
+<label>Personajes y apariencia</label>
+<textarea id="characters" rows="3">Rut: mujer joven, cabello oscuro largo, vestido sencillo de época bíblica.
+Noemí: mujer mayor, rostro marcado por la vida, vestido de época bíblica.</textarea>
+<label>Estilo visual</label>
+<select id="style">
+<option>Humanos 3D realistas, película cinematográfica</option>
+<option>Animación 3D realista</option>
+<option>Película histórica hiperrealista</option>
+</select>
+<label>Duración deseada</label>
+<select id="duration">
+<option>Más de 1 minuto</option>
+<option>3 minutos</option>
+<option>5 minutos</option>
+<option>10 minutos</option>
+</select>
+<label>Descripción de la historia</label>
+<textarea id="description" rows="4">La historia de Rut y Noemí, su viaje, su unión y la fidelidad de Rut hacia su suegra.</textarea>
+<button onclick="generate()">GENERAR ESCENAS</button>
+</div>
+
+<div class="card">
+<h2>📽️ Escenas de la producción</h2>
+<div id="scenes">
+<p class="small">Tus escenas aparecerán aquí.</p>
+</div>
+<button onclick="downloadProject()">DESCARGAR PROYECTO</button>
+<button onclick="copyAll()">COPIAR TODOS LOS PROMPTS</button>
+</div>
+
+<div class="card">
+<h2>🎙️ Narración</h2>
+<textarea id="narration" rows="6" placeholder="Escribe aquí la narración de tu historia..."></textarea>
+<button onclick="copyNarration()">COPIAR NARRACIÓN</button>
+</div>
+</main>
+
+<script>
+let scenes=[];
+
+function generate(){
+const story=document.getElementById('story').value;
+const characters=document.getElementById('characters').value;
+const style=document.getElementById('style').value;
+const description=document.getElementById('description').value;
+
+scenes=[
+["Escena 1: Presentación","Plano cinematográfico de un antiguo pueblo de Israel. Rut y Noemí aparecen juntas. Luz natural, ambiente histórico."],
+["Escena 2: El camino","Rut y Noemí caminan juntas por un sendero antiguo. Vestuario y rostros consistentes."],
+["Escena 3: La decisión","Rut mira a Noemí con determinación y cariño. Primer plano emocional, gestos naturales."],
+["Escena 4: El viaje","Ambas mujeres atraviesan campos y caminos de tierra. Cámara siguiendo sus pasos."],
+["Escena 5: La esperanza","Rut observa los campos de Belén. Luz cálida del amanecer, expresión de esperanza."],
+["Escena 6: Un nuevo comienzo","Rut y Noemí llegan juntas al pueblo. Plano amplio cinematográfico."]
+];
+
+document.getElementById('scenes').innerHTML=scenes.map((s,i)=>`
+<div class="scene">
+<h3>${s[0]}</h3>
+<p>${s[1]}</p>
+<p class="small"><b>Personajes:</b> ${characters}</p>
+<p class="small"><b>Estilo:</b> ${style}</p>
+<p class="small"><b>Historia:</b> ${description}</p>
+<button onclick="copyScene(${i})">COPIAR PROMPT</button>
+</div>`).join('');
+
+}
+
+function copyScene(i){
+const s=scenes[i];
+const text=`${s[0]}\n${s[1]}\nPersonajes: ${document.getElementById('characters').value}\nEstilo: ${document.getElementById('style').value}`;
+navigator.clipboard.writeText(text).then(()=>alert("Prompt copiado"));
+}
+
+function copyAll(){
+const text=scenes.map(s=>s[0]+"\n"+s[1]).join("\n\n");
+navigator.clipboard.writeText(text).then(()=>alert("Prompts copiados"));
+}
+
+function copyNarration(){
+navigator.clipboard.writeText(document.getElementById('narration').value).then(()=>alert("Narración copiada"));
+}
+
+function downloadProject(){
+const content="HISTORIA: "+document.getElementById('story').value+
+"\n\n"+scenes.map(s=>s[0]+"\n"+s[1]).join("\n\n")+
+"\n\nNARRACIÓN:\n"+document.getElementById('narration').value;
+const file=new Blob([content],{type:"text/plain;charset=utf-8"});
+const a=document.createElement("a");
+a.href=URL.createObjectURL(file);
+a.download="proyecto-biblico.txt";
+a.click();
+URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>
