@@ -85,7 +85,8 @@ async function sendScene(i,button){
    const state=await check.json();
    if(state.status==="completed"&&state.video_url){
     const v=document.createElement("video");v.controls=true;v.src=state.video_url.startsWith("http")?state.video_url:url+state.video_url;
-    if(!completedJobs.includes(id))completedJobs.push(id);\n    const title=document.createElement("p");title.textContent="Escena "+(i+1)+" — "+scenes[i].title;
+    if(!completedJobs.includes(id))completedJobs.push(id);
+    const title=document.createElement("p");title.textContent="Escena "+(i+1)+" — "+scenes[i].title;
     $("renderArea").append(title,v);button.textContent="VIDEO LISTO";$("engineStatus").textContent="Escena "+(i+1)+" renderizada correctamente.";done=true;break;
    }
    if(state.status==="failed")throw Error(state.error||"El motor informó un error.");
