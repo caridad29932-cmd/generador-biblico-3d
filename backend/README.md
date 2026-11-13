@@ -32,10 +32,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 export COMFYUI_URL=http://127.0.0.1:8188
 export BETANIA_ORIGIN=https://TU-USUARIO.github.io/TU-REPOSITORIO
+export BETANIA_API_KEY="usa-una-clave-larga-y-privada"
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-En BETANIA, pega la URL pública HTTPS de esta API y pulsa **Guardar conexión** y **Probar servidor**. La API debe publicarse detrás de HTTPS; el navegador bloqueará llamadas HTTP desde GitHub Pages.
+En BETANIA, pega la URL pública HTTPS de esta API, escribe la misma clave en el campo de clave privada y pulsa **Guardar conexión** y **Probar servidor**. La clave protege cargas y trabajos; los enlaces MP4 se firman por trabajo. La API debe publicarse detrás de HTTPS; el navegador bloqueará llamadas HTTP desde GitHub Pages.
 
 ## Endpoints
 
