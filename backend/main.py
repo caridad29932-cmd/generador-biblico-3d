@@ -47,3 +47,28 @@ async def create_job(body: JobRequest):
         raise HTTPException(status_code=502, detail="ComfyUI rechazó el workflow: " + response.text[:500])
     data = response.json()
     return {"job_id": data.get("prompt_id"), "status": "queued", "message": "Trabajo enviado a ComfyUI; consulta el historial de ComfyUI para obtener el MP4."}
+
+@app.get("/api/jobs/{prompt_id}")
+async def job_status(prompt_id: str):
+    if not COMFYUI_URL:
+        raise HTTPException(status_code=503, detail="ComfyUI no está configurado.")
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(COMFYUI_URL + "/history/" + prompt_id)
+    if response.status_code >= 400:
+        raise HTTPException(status_code=502, detail="No se pudo consultar ComfyUI.")
+    history = response.json().get(prompt_id, {})
+    if not history:
+        return {"job_id": prompt_id, "status": "processing"}
+    outputs = history.get("outputs", {})
+    for node in outputs.values():
+        for key in ("videos", "gifs"):
+            for item in node.get(key, []):
+                filename = item.get("filename")
+                if filename:
+                    from urllib.parse import urlencode
+                    query = urlencode({"filename": filename, "subfolder": item.get("subfolder", ""), "type": item.get("type", "output")})
+                    return {"job_id": prompt_id, "status": "completed", "video_url": COMFYUI_URL + "/view?" + query}
+    status = history.get("status", {})
+    if status.get("status_str") == "error":
+        return {"job_id": prompt_id, "status": "failed", "error": "ComfyUI no pudo completar el workflow."}
+    return {"job_id": prompt_id, "status": "processing"}
