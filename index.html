@@ -1,175 +1,48 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Generador Bíblico 3D</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:#10121b;color:#fff;font-family:Arial}
-header{text-align:center;padding:25px;background:#24283b}
-h1{color:#eac47c}
-main{max-width:850px;margin:auto;padding:15px}
-.card{background:#22283a;padding:18px;border-radius:13px;margin:15px 0}
-input,textarea,select{width:100%;padding:13px;margin:8px 0;background:#111522;color:white;border:1px solid #555;border-radius:8px}
-button{background:#d4ad68;color:#171717;padding:13px;border:0;border-radius:8px;font-weight:bold;margin:5px 2px}
-.scene{background:#30374b;padding:15px;border-radius:10px;margin:12px 0}
-.small{color:#ccc;font-size:13px}
-</style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#11131b">
+<title>BETANIA — Cine bíblico con IA</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header>
-<h1>GENERADOR BÍBLICO 3D</h1>
-<p>Estudio y producciones cinematográficas</p>
-</header>
+<header class="top"><a class="brand" href="#">BETANIA<span>✦</span></a><span class="tag">ESTUDIO CINEMATOGRÁFICO BÍBLICO</span></header>
 <main>
-
-<div class="card">
-<h2>🎬 Nueva producción</h2>
-<label>Título</label>
-<input id="story" value="Rut y Noemí">
-
-<label>Personajes principales y apariencia</label>
-<textarea id="characters" rows="5">RUT: mujer joven de aproximadamente 25 años, piel oliva, cabello largo oscuro, ojos marrones, vestido sencillo color tierra.
-NOEMÍ: mujer de aproximadamente 60 años, rostro maduro, cabello oscuro con canas, vestido largo de época bíblica.</textarea>
-
-<label>Estilo cinematográfico</label>
-<select id="style">
-<option>Humanos 3D hiperrealistas, película cinematográfica</option>
-<option>3D realista de alta calidad</option>
-<option>Animación cinematográfica 3D</option>
-</select>
-
-<label>Duración</label>
-<select id="duration">
-<option>Más de 1 minuto</option>
-<option>3 minutos</option>
-<option>5 minutos</option>
-<option>10 minutos</option>
-</select>
-
-<label>Historia completa</label>
-<textarea id="description" rows="5" placeholder="Escribe la historia...">Rut decide acompañar a Noemí en su viaje hacia Belén. Su amor, lealtad y valentía cambiarán sus vidas.</textarea>
-
-<button onclick="generate()">CREAR PRODUCCIÓN</button>
-</div>
-
-<div class="card">
-<h2>🎭 Continuidad de personajes</h2>
-<p class="small">Mantén estas características en todas las escenas para evitar cambios de rostro, edad y vestuario.</p>
-<div id="characterView"></div>
-</div>
-
-<div class="card">
-<h2>🎥 Guion cinematográfico</h2>
-<div id="scenes">Genera una producción para ver las escenas.</div>
-</div>
-
-<div class="card">
-<h2>🎙️ Narración completa</h2>
-<textarea id="narration" rows="8" placeholder="Escribe o pega aquí tu narración..."></textarea>
-<button onclick="copy('narration')">COPIAR NARRACIÓN</button>
-</div>
-
-<div class="card">
-<h2>📦 Guardar producción</h2>
-<button onclick="download()">DESCARGAR PROYECTO</button>
-<button onclick="copyAll()">COPIAR PRODUCCIÓN</button>
-</div>
-
-<div class="card">
-<h2>⚙️ Estado del generador</h2>
-<p>Motor de historias: <b>Activo</b></p>
-<p>Organizador de escenas: <b>Activo</b></p>
-<p>Preparación de prompts: <b>Activa</b></p>
-<p>Renderizado de video: <b>Pendiente de conectar</b></p>
-</div>
-
+<section class="hero"><p class="eyebrow">DEL TEXTO SAGRADO A LA PANTALLA</p><h1>Cuenta la historia.<br><em>Vívela en imágenes.</em></h1><p class="sub">Construye escenas, conserva la identidad de tus personajes y prepara una producción cinematográfica.</p></section>
+<section class="panel">
+<div class="section-head"><div><span class="step">01</span><h2>Tu historia</h2></div><span class="muted">PROYECTO NUEVO</span></div>
+<label for="title">Título de la producción</label><input id="title" value="Rut y Noemí">
+<label for="story">Historia bíblica completa</label><textarea id="story" rows="7" placeholder="Escribe o pega aquí la historia bíblica que quieres convertir en película...">Después de quedar viuda, Rut decide permanecer junto a Noemí y acompañarla hasta Belén. Allí comienza una nueva etapa marcada por la lealtad, la fe y la esperanza. Rut recoge espigas en los campos de Booz, quien la trata con bondad. Con el tiempo, Booz se convierte en su redentor y Rut forma parte de la genealogía del rey David.</textarea>
+<div class="two"><div><label for="look">Estilo visual</label><select id="look"><option>Cine bíblico 3D hiperrealista</option><option>Animación 3D cinematográfica</option><option>Realismo histórico cinematográfico</option></select></div><div><label for="length">Duración objetivo</label><select id="length"><option value="60">1 minuto</option><option value="180" selected>3 minutos</option><option value="300">5 minutos</option><option value="600">10 minutos</option></select></div></div>
+<button class="primary" id="plan">✦ CREAR GUION Y ESCENAS</button><p id="planStatus" class="status" aria-live="polite">El planificador organiza tu historia en escenas editables.</p>
+</section>
+<section class="panel">
+<div class="section-head"><div><span class="step">02</span><h2>Personajes y continuidad</h2></div></div>
+<label for="cast">Ficha de personajes (apariencia que debe mantenerse)</label><textarea id="cast" rows="5">RUT: mujer moabita joven adulta, piel oliva, cabello largo oscuro, ojos marrones, vestido sencillo color tierra.
+NOEMÍ: mujer mayor, rostro maduro, cabello oscuro con canas, vestido largo de época bíblica.
+BOOZ: hombre adulto, aspecto noble, barba cuidada, túnica de trabajador acomodado.</textarea>
+<p class="hint">Esta ficha se añade a cada prompt para ayudar a conservar rostro, edad, cabello y vestuario entre escenas.</p>
+<div id="castPreview" class="cast-preview">Tus fichas se incluirán al generar el guion.</div>
+</section>
+<section class="panel">
+<div class="section-head"><div><span class="step">03</span><h2>Guion cinematográfico</h2></div><span id="sceneCount" class="muted">0 ESCENAS</span></div>
+<div id="scenes" class="empty">Primero crea el guion de tu historia.</div>
+</section>
+<section class="panel">
+<div class="section-head"><div><span class="step">04</span><h2>Motor de video</h2></div><span class="pill" id="engineState">SIN CONECTAR</span></div>
+<p class="hint">BETANIA puede enviar cada escena a un servidor de generación compatible con ComfyUI. El servidor debe tener Wan 2.2 instalado y una plantilla de flujo configurada. La página por sí sola no ejecuta un modelo de video ni consume créditos externos.</p>
+<label for="backend">Dirección de tu servidor de video (API)</label><input id="backend" placeholder="https://tu-servidor/api">
+<div class="actions"><button class="secondary" id="saveBackend">GUARDAR CONEXIÓN</button><button class="secondary" id="testBackend">PROBAR SERVIDOR</button></div>
+<div id="engineStatus" class="status" aria-live="polite">Pendiente de conectar un servidor GPU.</div>
+<div id="renderArea" class="render-area"><p class="muted">Cuando el motor esté conectado, aquí aparecerán los clips generados.</p></div>
+</section>
+<section class="panel">
+<div class="section-head"><div><span class="step">05</span><h2>Narración y proyecto</h2></div></div>
+<label for="narration">Narración / voz en off</label><textarea id="narration" rows="5" placeholder="Escribe la narración de tu película..."></textarea>
+<div class="actions"><button class="secondary" id="saveProject">DESCARGAR PROYECTO JSON</button><button class="secondary" id="loadProject">ABRIR PROYECTO JSON</button><input id="projectFile" type="file" accept="application/json" hidden></div>
+</section>
+<footer>BETANIA · Proyecto independiente · El motor de video requiere servidor GPU configurado.</footer>
 </main>
-
-<script>
-let scenes=[];
-
-function generate(){
-const story=document.getElementById('story').value;
-const characters=document.getElementById('characters').value;
-const style=document.getElementById('style').value;
-const description=document.getElementById('description').value;
-
-if(!story.trim()||!description.trim()){
-alert("Escribe el título y la historia.");
-return;
-}
-
-document.getElementById('characterView').innerText=characters;
-
-const templates=[
-["01. Introducción","Presentar el lugar, la época y los personajes. Plano cinematográfico amplio."],
-["02. Presentación emocional","Mostrar los rostros y las emociones de los personajes mediante primeros planos."],
-["03. El acontecimiento","Representar el acontecimiento principal de la historia con movimientos naturales."],
-["04. La decisión","Mostrar la decisión importante de los protagonistas mediante expresiones y acciones."],
-["05. El camino","Desarrollar la historia con escenarios históricos, movimientos de cámara y continuidad."],
-["06. El momento culminante","Representar el punto más importante y emotivo de la historia."],
-["07. El desenlace","Mostrar las consecuencias de las decisiones y el cambio en los personajes."],
-["08. Reflexión final","Cerrar con una escena cinematográfica emotiva."]
-];
-
-scenes=templates.map((item,i)=>({
-title:item[0],
-prompt:`Historia: ${story}.
-Descripción: ${description}.
-Escena: ${item[1]}
-Personajes: ${characters}.
-Estilo visual: ${style}.
-Continuidad obligatoria: conservar exactamente los mismos rostros, edades, peinados, vestuario y características físicas en todas las escenas.
-Calidad: iluminación cinematográfica, anatomía humana natural, expresiones realistas, movimientos fluidos, cámara profesional, profundidad de campo.
-Evitar: rostros deformes, cambios de identidad, extremidades adicionales y apariencia artificial.`
-}));
-
-document.getElementById('scenes').innerHTML=scenes.map((s,i)=>`
-<div class="scene">
-<h3>${s.title}</h3>
-<p>${s.prompt}</p>
-<button onclick="copyScene(${i})">COPIAR PROMPT</button>
-</div>`).join('');
-
-}
-
-function copy(id){
-navigator.clipboard.writeText(document.getElementById(id).value)
-.then(()=>alert("Copiado correctamente"))
-.catch(()=>alert("Selecciona y copia el texto manualmente"));
-}
-
-function copyScene(i){
-navigator.clipboard.writeText(scenes[i].prompt)
-.then(()=>alert("Escena copiada"));
-}
-
-function copyAll(){
-const content=scenes.map(s=>s.title+"\n"+s.prompt).join("\n\n");
-navigator.clipboard.writeText(content)
-.then(()=>alert("Producción copiada"));
-}
-
-function download(){
-const data={
-titulo:document.getElementById('story').value,
-personajes:document.getElementById('characters').value,
-estilo:document.getElementById('style').value,
-duracion:document.getElementById('duration').value,
-historia:document.getElementById('description').value,
-escenas:scenes,
-narracion:document.getElementById('narration').value
-};
-const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-const a=document.createElement('a');
-a.href=URL.createObjectURL(blob);
-a.download='produccion-biblica.json';
-a.click();
-URL.revokeObjectURL(a.href);
-}
-</script>
-</body>
-</html>
+<script src="app.js"></script>
+</body></html>
