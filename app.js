@@ -14,7 +14,7 @@ function makeScenes(){
  const title=$("title").value.trim(),story=$("story").value.trim(),cast=$("cast").value.trim(),look=$("look").value;
  if(!title||!story){$("planStatus").textContent="Escribe un título y la historia completa.";return}
  const parts=story.split(/(?<=[.!?])\s+/).filter(Boolean);
- const count=Math.min(8,Math.max(4,Math.ceil(Number($("length").value)/45)));
+ const count=Math.min(120,Math.max(12,Math.ceil(Number($("length").value)/5)));
  scenes=Array.from({length:count},(_,i)=>{
   const start=Math.floor(i*parts.length/count),end=Math.max(start+1,Math.floor((i+1)*parts.length/count));
   const excerpt=parts.slice(start,end).join(" ")||story;
@@ -33,7 +33,7 @@ function makeScenes(){
   const send=document.createElement("button");send.className="secondary";send.textContent="ENVIAR A MOTOR";send.addEventListener("click",()=>sendScene(i,send));
   card.append(h,p,b,send);$("scenes").append(card);
  });
- $("planStatus").textContent="Guion preparado. Revisa y edita las fichas antes de enviar escenas al motor.";
+ $("planStatus").textContent="Guion preparado: "+scenes.length+" clips de aproximadamente 5 segundos cada uno. Revisa las escenas; cada envío consume recursos del servidor GPU."
  $("narration").value=parts.join("\n\n");
 }
 async function copyText(value,button){try{await navigator.clipboard.writeText(value);button.textContent="COPIADO";setTimeout(()=>button.textContent="COPIAR PROMPT",1400)}catch(e){window.prompt("Copia el texto:",value)}}
