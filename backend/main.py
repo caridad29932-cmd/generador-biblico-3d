@@ -40,7 +40,7 @@ def video_signature(prompt_id: str) -> str:
 
 class JobRequest(BaseModel):
     prompt: str = Field(min_length=5, max_length=12000)
-    scene_index: int = Field(ge=1, le=100)
+    scene_index: int = Field(ge=1, le=120)
     title: str = Field(default="BETANIA", max_length=200)
     reference_image: str | None = Field(default=None, max_length=500)
 
