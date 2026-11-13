@@ -38,7 +38,8 @@ function makeScenes(){
  $("narration").value=parts.join("\n\n");
 }
 async function copyText(value,button){try{await navigator.clipboard.writeText(value);button.textContent="COPIADO";setTimeout(()=>button.textContent="COPIAR PROMPT",1400)}catch(e){window.prompt("Copia el texto:",value)}}
-function backend(){return $("backend").value.trim().replace(/\/$/,"")}\nfunction authHeaders(){const key=$("apiKey").value.trim();return key?{"Authorization":"Bearer "+key}:{}}
+function backend(){return $("backend").value.trim().replace(/\/$/,"")}
+function authHeaders(){const key=$("apiKey").value.trim();return key?{"Authorization":"Bearer "+key}:{}}
 $("plan").addEventListener("click",makeScenes);
 $("cast").addEventListener("input",()=>{$("castPreview").textContent=$("cast").value});
 $("saveBackend").addEventListener("click",()=>{localStorage.setItem("betania_backend",backend());localStorage.setItem("betania_api_key",$("apiKey").value);$("engineStatus").textContent="Dirección guardada en este dispositivo.";});
