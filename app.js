@@ -45,7 +45,7 @@ $("backend").value=localStorage.getItem("betania_backend")||"";
 async function testServer(){
  const url=backend();if(!url){$("engineStatus").textContent="Introduce la dirección de tu servidor.";return}
  $("engineStatus").textContent="Comprobando conexión...";
- try{const r=await fetch(url+"/health");if(!r.ok)throw Error("HTTP "+r.status);const data=await r.json();$("engineState").textContent="CONECTADO";$("engineStatus").textContent="Servidor disponible: "+(data.status||"OK")+". Motor: "+(data.engine||"ComfyUI/Wan 2.2");}
+ try{const r=await fetch(url+"/health");if(!r.ok)throw Error("HTTP "+r.status);const data=await r.json();if(data.configured){$("engineState").textContent="CONECTADO";$("engineStatus").textContent="Servidor y ComfyUI disponibles. Motor: "+(data.engine||"Wan 2.2");}else{$("engineState").textContent="GPU PENDIENTE";$("engineStatus").textContent="La API responde, pero ComfyUI/Wan 2.2 todavía no está conectado."; }}
  catch(e){$("engineState").textContent="SIN CONECTAR";$("engineStatus").textContent="No se pudo verificar el servidor. Comprueba URL, CORS y que el backend esté activo. Detalle: "+e.message;}
 }
 $("testBackend").addEventListener("click",testServer);
@@ -66,7 +66,7 @@ async function sendScene(i,button){
    if(!check.ok)throw Error("No se pudo consultar el trabajo: HTTP "+check.status);
    const state=await check.json();
    if(state.status==="completed"&&state.video_url){
-    const v=document.createElement("video");v.controls=true;v.src=state.video_url;
+    const v=document.createElement("video");v.controls=true;v.src=state.video_url.startsWith("http")?state.video_url:url+state.video_url;
     const title=document.createElement("p");title.textContent="Escena "+(i+1)+" — "+scenes[i].title;
     $("renderArea").append(title,v);button.textContent="VIDEO LISTO";$("engineStatus").textContent="Escena "+(i+1)+" renderizada correctamente.";done=true;break;
    }
