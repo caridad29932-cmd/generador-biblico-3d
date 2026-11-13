@@ -38,10 +38,10 @@ function makeScenes(){
  $("narration").value=parts.join("\n\n");
 }
 async function copyText(value,button){try{await navigator.clipboard.writeText(value);button.textContent="COPIADO";setTimeout(()=>button.textContent="COPIAR PROMPT",1400)}catch(e){window.prompt("Copia el texto:",value)}}
-function backend(){return $("backend").value.trim().replace(/\/$/,"")}
+function backend(){return $("backend").value.trim().replace(/\/$/,"")}\nfunction authHeaders(){const key=$("apiKey").value.trim();return key?{"Authorization":"Bearer "+key}:{}}
 $("plan").addEventListener("click",makeScenes);
 $("cast").addEventListener("input",()=>{$("castPreview").textContent=$("cast").value});
-$("saveBackend").addEventListener("click",()=>{localStorage.setItem("betania_backend",backend());$("engineStatus").textContent="Dirección guardada en este dispositivo.";});
+$("saveBackend").addEventListener("click",()=>{localStorage.setItem("betania_backend",backend());localStorage.setItem("betania_api_key",$("apiKey").value);$("engineStatus").textContent="Dirección guardada en este dispositivo.";});
 
 $("referenceImage").addEventListener("change",async e=>{
  const file=e.target.files[0];if(!file)return;
@@ -50,14 +50,14 @@ $("referenceImage").addEventListener("change",async e=>{
  const form=new FormData();form.append("file",file);
  $("referenceStatus").textContent="Subiendo imagen de referencia...";
  try{
-  const r=await fetch(backend()+"/api/reference",{method:"POST",body:form});
+  const r=await fetch(backend()+"/api/reference",{method:"POST",headers:authHeaders(),body:form});
   if(!r.ok)throw Error("HTTP "+r.status);
   const data=await r.json();referenceImageName=data.image_name;
   $("referenceStatus").textContent="Referencia cargada. Se usará en cada escena enviada al motor.";
  }catch(err){referenceImageName="";$("referenceStatus").textContent="No se pudo subir la referencia: "+err.message}
 });
 
-$("backend").value=localStorage.getItem("betania_backend")||"";
+$("backend").value=localStorage.getItem("betania_backend")||"";$("apiKey").value=localStorage.getItem("betania_api_key")||"";
 async function testServer(){
  const url=backend();if(!url){$("engineStatus").textContent="Introduce la dirección de tu servidor.";return}
  $("engineStatus").textContent="Comprobando conexión...";
@@ -70,7 +70,7 @@ async function sendScene(i,button){
  if(!scenes[i])return;
  button.disabled=true;button.textContent="ENVIANDO...";
  try{
-  const r=await fetch(url+"/api/jobs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:scenes[i].prompt,scene_index:i+1,title:$("title").value,reference_image:referenceImageName||null})});
+  const r=await fetch(url+"/api/jobs",{method:"POST",headers:{"Content-Type":"application/json",...authHeaders()},body:JSON.stringify({prompt:scenes[i].prompt,scene_index:i+1,title:$("title").value,reference_image:referenceImageName||null})});
   if(!r.ok)throw Error("HTTP "+r.status);
   const data=await r.json();const id=data.job_id;
   if(!id)throw Error("El servidor no devolvió job_id.");
@@ -78,7 +78,7 @@ async function sendScene(i,button){
   const started=Date.now();let done=false;
   while(Date.now()-started<900000){
    await new Promise(resolve=>setTimeout(resolve,5000));
-   const check=await fetch(url+"/api/jobs/"+encodeURIComponent(id));
+   const check=await fetch(url+"/api/jobs/"+encodeURIComponent(id),{headers:authHeaders()});
    if(!check.ok)throw Error("No se pudo consultar el trabajo: HTTP "+check.status);
    const state=await check.json();
    if(state.status==="completed"&&state.video_url){
