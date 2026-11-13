@@ -5,6 +5,7 @@
 - Workflow oficial de ComfyUI para Wan 2.2 TI2V-5B guardado en `wan2_2_5b_t2v.json`.
 - Conversión del grafo de ComfyUI a formato API.
 - Envío de trabajos a `POST /prompt`.
+- Carga opcional de imagen de referencia con `POST /api/reference` y modo imagen-a-video del workflow.
 - Seguimiento de trabajos con `GET /history/{prompt_id}`.
 - Entrega de MP4 a BETANIA mediante un endpoint proxy, sin exponer la dirección interna de ComfyUI al navegador.
 - `GET /health` para comprobar si ComfyUI está disponible.
@@ -39,7 +40,8 @@ En BETANIA, pega la URL pública HTTPS de esta API y pulsa **Guardar conexión**
 ## Endpoints
 
 - `GET /health`
-- `POST /api/jobs` JSON: `{"prompt":"...","scene_index":1,"title":"Rut y Noemí"}`
+- `POST /api/reference` multipart con campo `file` (PNG/JPG/WEBP, máximo 10 MB).
+- `POST /api/jobs` JSON: `{"prompt":"...","scene_index":1,"title":"Rut y Noemí","reference_image":"nombre.png"}`; `reference_image` es opcional.
 - `GET /api/jobs/{prompt_id}`
 - `GET /api/jobs/{prompt_id}/video`
 
