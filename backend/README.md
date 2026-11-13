@@ -1,17 +1,48 @@
-# Backend de BETANIA (Wan 2.2 / ComfyUI)
+# BETANIA — backend de video Wan 2.2
 
-Este directorio define el contrato de API entre la página BETANIA y un servidor GPU. La página estática de GitHub Pages **no ejecuta** modelos de video ni incluye GPU.
+## Qué está listo
 
-## Contrato esperado
+- Workflow oficial de ComfyUI para Wan 2.2 TI2V-5B guardado en `wan2_2_5b_t2v.json`.
+- Conversión del grafo de ComfyUI a formato API.
+- Envío de trabajos a `POST /prompt`.
+- Seguimiento de trabajos con `GET /history/{prompt_id}`.
+- Entrega de MP4 a BETANIA mediante un endpoint proxy, sin exponer la dirección interna de ComfyUI al navegador.
+- `GET /health` para comprobar si ComfyUI está disponible.
 
-- `GET /health` devuelve JSON, por ejemplo `{"status":"ok","engine":"ComfyUI + Wan 2.2"}`.
-- `POST /api/jobs` recibe `{"prompt":"...","scene_index":1,"title":"..."}` y devuelve un identificador de trabajo. Puede devolver `video_url` cuando el clip ya esté listo.
-- El servidor debe habilitar CORS para el dominio publicado de BETANIA.
+## Requisitos del servidor GPU
 
-## Motor recomendado
+1. Un servidor Linux con GPU NVIDIA y controladores/CUDA compatibles con la versión de PyTorch y ComfyUI instalada.
+2. ComfyUI actualizado y los tres modelos del workflow oficial:
+   - `wan2.2_ti2v_5B_fp16.safetensors` en `ComfyUI/models/diffusion_models/`
+   - `umt5_xxl_fp8_e4m3fn_scaled.safetensors` en `ComfyUI/models/text_encoders/`
+   - `wan2.2_vae.safetensors` en `ComfyUI/models/vae/`
+3. Iniciar ComfyUI escuchando en la interfaz de red del servidor, por ejemplo `python main.py --listen 0.0.0.0 --port 8188`.
+4. Instalar esta API en el mismo servidor o en una red que pueda alcanzar ComfyUI.
 
-Usar ComfyUI con el workflow oficial de Wan 2.2 TI2V-5B. El workflow debe estar instalado en el servidor y sus nodos/entradas deben mapear el prompt recibido. El adaptador debe crear el trabajo en la API de ComfyUI, consultar su historial hasta que termine y publicar el MP4 en una URL accesible.
+La documentación de ComfyUI indica que el workflow Wan 2.2 TI2V-5B es híbrido texto/imagen a video y puede funcionar con offloading nativo en equipos con 8 GB de VRAM, aunque la velocidad y resolución dependen del hardware. Guía: https://docs.comfy.org/tutorials/video/wan/wan2_2
 
-## Estado
+## Ejecutar la API
 
-La interfaz y el contrato HTTP están preparados. No se incluye una dirección de GPU, claves privadas, pesos del modelo ni un workflow ComfyUI inventado. Por tanto, la generación real permanece desactivada hasta desplegar y probar ese servidor.
+Desde este directorio:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export COMFYUI_URL=http://127.0.0.1:8188
+export BETANIA_ORIGIN=https://TU-USUARIO.github.io/TU-REPOSITORIO
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+En BETANIA, pega la URL pública HTTPS de esta API y pulsa **Guardar conexión** y **Probar servidor**. La API debe publicarse detrás de HTTPS; el navegador bloqueará llamadas HTTP desde GitHub Pages.
+
+## Endpoints
+
+- `GET /health`
+- `POST /api/jobs` JSON: `{"prompt":"...","scene_index":1,"title":"Rut y Noemí"}`
+- `GET /api/jobs/{prompt_id}`
+- `GET /api/jobs/{prompt_id}/video`
+
+## Importante
+
+El repositorio incluye el código, el workflow y la interfaz. No incluye una GPU remota, pesos del modelo (son archivos de varios GB), ni una URL pública de servidor. Por eso el render real solo queda activo después de desplegar esos componentes. No se ha simulado ninguna generación.
