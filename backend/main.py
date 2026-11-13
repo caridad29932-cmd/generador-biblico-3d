@@ -4,14 +4,19 @@ import hmac
 import json
 import os
 import secrets
+import shutil
+import subprocess
+import tempfile
 import uuid
+import re
 from pathlib import Path
+from starlette.background import BackgroundTask
 from urllib.parse import urlencode
 
 import httpx
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
 COMFYUI_URL = os.getenv("COMFYUI_URL", "http://127.0.0.1:8188").rstrip("/")
@@ -36,6 +41,10 @@ def video_signature(prompt_id: str) -> str:
     if not API_KEY:
         return "public"
     return hmac.new(API_KEY.encode("utf-8"), prompt_id.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+class AssembleRequest(BaseModel):
+    job_ids: list[str] = Field(min_length=1, max_length=120)
 
 
 class JobRequest(BaseModel):
@@ -186,6 +195,58 @@ async def job_status(prompt_id: str, _auth=Depends(require_api_key)):
     if status.get("status_str") == "error":
         return {"job_id": prompt_id, "status": "failed", "error": "ComfyUI no pudo completar el workflow. Revisa los logs del servidor."}
     return {"job_id": prompt_id, "status": "processing"}
+
+
+
+@app.post("/api/assemble")
+async def assemble_video(body: AssembleRequest, _auth=Depends(require_api_key)):
+    """Download completed ComfyUI clips and concatenate them into one MP4."""
+    if shutil.which("ffmpeg") is None:
+        raise HTTPException(status_code=503, detail="FFmpeg no está instalado en el servidor BETANIA.")
+    temp_dir = Path(tempfile.mkdtemp(prefix="betania-"))
+    try:
+        clip_paths = []
+        async with httpx.AsyncClient(timeout=180) as client:
+            for index, prompt_id in enumerate(body.job_ids, start=1):
+                if not re.fullmatch(r"[a-fA-F0-9-]{16,64}", prompt_id):
+                    raise HTTPException(status_code=400, detail="Identificador de trabajo inválido.")
+                response = await client.get(COMFYUI_URL + "/history/" + prompt_id)
+                response.raise_for_status()
+                history = response.json().get(prompt_id, {})
+                video_meta = None
+                for node_output in history.get("outputs", {}).values():
+                    for key in ("videos", "gifs"):
+                        if node_output.get(key):
+                            video_meta = node_output[key][0]
+                            break
+                    if video_meta:
+                        break
+                if not video_meta:
+                    raise HTTPException(status_code=409, detail=f"La escena {index} aún no tiene video terminado.")
+                query = urlencode({
+                    "filename": video_meta["filename"],
+                    "subfolder": video_meta.get("subfolder", ""),
+                    "type": video_meta.get("type", "output"),
+                })
+                video_response = await client.get(COMFYUI_URL + "/view?" + query)
+                video_response.raise_for_status()
+                clip_path = temp_dir / f"clip_{index:03d}.mp4"
+                clip_path.write_bytes(video_response.content)
+                clip_paths.append(clip_path)
+        concat_file = temp_dir / "clips.txt"
+        concat_file.write_text("".join(f"file '{path.name}'\\n" for path in clip_paths), encoding="utf-8")
+        output_path = temp_dir / "BETANIA_pelicula_final.mp4"
+        command = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file), "-c", "copy", "-movflags", "+faststart", str(output_path)]
+        result = subprocess.run(command, capture_output=True, text=True, timeout=1800)
+        if result.returncode != 0 or not output_path.exists():
+            raise HTTPException(status_code=500, detail="FFmpeg no pudo unir los clips: " + result.stderr[-1200:])
+        return FileResponse(output_path, media_type="video/mp4", filename="BETANIA_pelicula_final.mp4", background=BackgroundTask(shutil.rmtree, temp_dir, ignore_errors=True))
+    except HTTPException:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise
+    except (httpx.HTTPError, OSError, subprocess.TimeoutExpired) as exc:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise HTTPException(status_code=502, detail=f"No se pudo montar el video final: {exc}") from exc
 
 
 @app.get("/api/jobs/{prompt_id}/video")
