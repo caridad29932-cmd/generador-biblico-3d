@@ -110,7 +110,8 @@ $("assemble").addEventListener("click",async()=>{
  }catch(e){$("assembleStatus").textContent="No se pudo montar el MP4: "+e.message}
  finally{button.disabled=false}
 });
-\nfunction projectData(){return {app:"BETANIA",version:1,title:$("title").value,story:$("story").value,cast:$("cast").value,look:$("look").value,length:$("length").value,narration:$("narration").value,scenes:scenes}}
+
+function projectData(){return {app:"BETANIA",version:1,title:$("title").value,story:$("story").value,cast:$("cast").value,look:$("look").value,length:$("length").value,narration:$("narration").value,scenes:scenes}}
 $("saveProject").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(projectData(),null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="betania-proyecto.json";a.click();URL.revokeObjectURL(a.href)});
 $("loadProject").addEventListener("click",()=>$("projectFile").click());
 $("projectFile").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());$("title").value=d.title||"";$("story").value=d.story||"";$("cast").value=d.cast||"";$("look").value=d.look||$("look").options[0].value;$("length").value=d.length||"180";$("narration").value=d.narration||"";makeScenes();$("planStatus").textContent="Proyecto cargado. Se reconstruyeron las escenas a partir de la historia."; }catch(err){alert("No se pudo abrir el archivo JSON.")}});
