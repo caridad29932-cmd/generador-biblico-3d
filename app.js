@@ -56,7 +56,8 @@ $("referenceImage").addEventListener("change",async e=>{
   $("referenceStatus").textContent="Referencia cargada. Se usará en cada escena enviada al motor.";
  }catch(err){referenceImageName="";$("referenceStatus").textContent="No se pudo subir la referencia: "+err.message}
 });
-\n$("backend").value=localStorage.getItem("betania_backend")||"";
+
+$("backend").value=localStorage.getItem("betania_backend")||"";
 async function testServer(){
  const url=backend();if(!url){$("engineStatus").textContent="Introduce la dirección de tu servidor.";return}
  $("engineStatus").textContent="Comprobando conexión...";
