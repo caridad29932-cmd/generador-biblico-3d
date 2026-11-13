@@ -20,3 +20,7 @@ jobs:
         run: python -m py_compile backend/main.py
       - name: Check Wan 2.2 workflow JSON
         run: python -m json.tool backend/wan2_2_5b_t2v.json > /dev/null
+      - name: Install backend requirements
+        run: pip install -r backend/requirements.txt
+      - name: Test Wan text-to-video and image-to-video conversion
+        run: PYTHONPATH=backend python -m unittest discover -s backend -p "test_*.py"
