@@ -1,4 +1,6 @@
 """BETANIA API: puente seguro entre la web y ComfyUI/Wan 2.2 TI2V-5B."""
+import hashlib
+import hmac
 import json
 import os
 import secrets
@@ -7,13 +9,14 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 COMFYUI_URL = os.getenv("COMFYUI_URL", "http://127.0.0.1:8188").rstrip("/")
 PUBLIC_ORIGIN = os.getenv("BETANIA_ORIGIN", "*")
+API_KEY = os.getenv("BETANIA_API_KEY", "")
 WORKFLOW_FILE = Path(os.getenv("WAN_WORKFLOW_JSON", Path(__file__).with_name("wan2_2_5b_t2v.json")))
 app = FastAPI(title="BETANIA Video API", version="0.2.0")
 app.add_middleware(
@@ -23,6 +26,17 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+def require_api_key(authorization: str | None = Header(default=None)):
+    if API_KEY and not hmac.compare_digest(authorization or "", "Bearer " + API_KEY):
+        raise HTTPException(status_code=401, detail="Clave de BETANIA inválida o ausente.")
+
+
+def video_signature(prompt_id: str) -> str:
+    if not API_KEY:
+        return "public"
+    return hmac.new(API_KEY.encode("utf-8"), prompt_id.encode("utf-8"), hashlib.sha256).hexdigest()
+
 
 class JobRequest(BaseModel):
     prompt: str = Field(min_length=5, max_length=12000)
@@ -102,7 +116,7 @@ async def health():
 
 
 @app.post("/api/reference")
-async def upload_reference(file: UploadFile = File(...)):
+async def upload_reference(file: UploadFile = File(...), _auth=Depends(require_api_key)):
     allowed = {"image/png", "image/jpeg", "image/webp"}
     if file.content_type not in allowed:
         raise HTTPException(status_code=415, detail="Usa una imagen PNG, JPG o WEBP.")
@@ -127,7 +141,7 @@ async def upload_reference(file: UploadFile = File(...)):
     return {"image_name": f"{subfolder}/{name}" if subfolder else name, "status": "uploaded"}
 
 @app.post("/api/jobs")
-async def create_job(body: JobRequest):
+async def create_job(body: JobRequest, _auth=Depends(require_api_key)):
     if not WORKFLOW_FILE.is_file():
         raise HTTPException(status_code=500, detail=f"No se encontró el workflow: {WORKFLOW_FILE}")
     try:
@@ -156,7 +170,7 @@ async def create_job(body: JobRequest):
 
 
 @app.get("/api/jobs/{prompt_id}")
-async def job_status(prompt_id: str):
+async def job_status(prompt_id: str, _auth=Depends(require_api_key)):
     response = await comfy_get("/history/" + prompt_id)
     history = response.json().get(prompt_id, {})
     if not history:
@@ -167,7 +181,7 @@ async def job_status(prompt_id: str):
             for item in node_output.get(key, []):
                 filename = item.get("filename")
                 if filename:
-                    return {"job_id": prompt_id, "status": "completed", "video_url": f"/api/jobs/{prompt_id}/video"}
+                    return {"job_id": prompt_id, "status": "completed", "video_url": f"/api/jobs/{prompt_id}/video?token={video_signature(prompt_id)}"}
     status = history.get("status", {})
     if status.get("status_str") == "error":
         return {"job_id": prompt_id, "status": "failed", "error": "ComfyUI no pudo completar el workflow. Revisa los logs del servidor."}
@@ -175,7 +189,9 @@ async def job_status(prompt_id: str):
 
 
 @app.get("/api/jobs/{prompt_id}/video")
-async def job_video(prompt_id: str):
+async def job_video(prompt_id: str, token: str):
+    if not hmac.compare_digest(token, video_signature(prompt_id)):
+        raise HTTPException(status_code=401, detail="Enlace de video inválido.")
     response = await comfy_get("/history/" + prompt_id)
     history = response.json().get(prompt_id, {})
     for node_output in history.get("outputs", {}).values():
