@@ -4,7 +4,7 @@ Aplicación independiente para planificar producciones bíblicas: historia, cont
 
 ## Publicación
 
-La interfaz es estática y se publica con GitHub Pages. El workflow está en `.github/workflows/pages.yml`.
+La interfaz es estática y se publica con GitHub Pages. La publicación usa la configuración de GitHub Pages ya habilitada en el repositorio.
 
 ## Generación real de video
 
