@@ -1,6 +1,7 @@
 const $=id=>document.getElementById(id);
 let scenes=[];
 let referenceImageName="";
+let completedJobs=[];
 const starters=[
 {title:"Apertura y contexto",purpose:"Establece el lugar, la época y la situación inicial."},
 {title:"Presentación de personajes",purpose:"Presenta a los protagonistas y sus relaciones mediante acciones y primeros planos."},
@@ -84,7 +85,7 @@ async function sendScene(i,button){
    const state=await check.json();
    if(state.status==="completed"&&state.video_url){
     const v=document.createElement("video");v.controls=true;v.src=state.video_url.startsWith("http")?state.video_url:url+state.video_url;
-    const title=document.createElement("p");title.textContent="Escena "+(i+1)+" — "+scenes[i].title;
+    if(!completedJobs.includes(id))completedJobs.push(id);\n    const title=document.createElement("p");title.textContent="Escena "+(i+1)+" — "+scenes[i].title;
     $("renderArea").append(title,v);button.textContent="VIDEO LISTO";$("engineStatus").textContent="Escena "+(i+1)+" renderizada correctamente.";done=true;break;
    }
    if(state.status==="failed")throw Error(state.error||"El motor informó un error.");
@@ -93,7 +94,22 @@ async function sendScene(i,button){
   if(!done)throw Error("El render sigue en proceso; vuelve a consultar el servidor.");
  }catch(e){button.disabled=false;button.textContent="REINTENTAR ESCENA";$("engineStatus").textContent="No se completó la escena: "+e.message}
 }
-function projectData(){return {app:"BETANIA",version:1,title:$("title").value,story:$("story").value,cast:$("cast").value,look:$("look").value,length:$("length").value,narration:$("narration").value,scenes:scenes}}
+
+$("assemble").addEventListener("click",async()=>{
+ const url=backend();if(!url){$("assembleStatus").textContent="Configura primero el servidor GPU.";return}
+ if(!completedJobs.length){$("assembleStatus").textContent="Primero genera al menos un clip.";return}
+ const button=$("assemble");button.disabled=true;$("assembleStatus").textContent="Descargando clips y montando el MP4 final...";
+ try{
+  const r=await fetch(url+"/api/assemble",{method:"POST",headers:{"Content-Type":"application/json",...authHeaders()},body:JSON.stringify({job_ids:completedJobs})});
+  if(!r.ok){const error=await r.text();throw Error("HTTP "+r.status+" "+error)}
+  const blob=await r.blob();const videoUrl=URL.createObjectURL(blob);
+  const v=document.createElement("video");v.controls=true;v.src=videoUrl;
+  const a=document.createElement("a");a.href=videoUrl;a.download="BETANIA_pelicula_final.mp4";a.textContent="DESCARGAR PELÍCULA MP4";a.className="secondary";
+  $("renderArea").append(v,a);$("assembleStatus").textContent="Película final lista. Ya puedes reproducirla o descargarla.";
+ }catch(e){$("assembleStatus").textContent="No se pudo montar el MP4: "+e.message}
+ finally{button.disabled=false}
+});
+\nfunction projectData(){return {app:"BETANIA",version:1,title:$("title").value,story:$("story").value,cast:$("cast").value,look:$("look").value,length:$("length").value,narration:$("narration").value,scenes:scenes}}
 $("saveProject").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(projectData(),null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="betania-proyecto.json";a.click();URL.revokeObjectURL(a.href)});
 $("loadProject").addEventListener("click",()=>$("projectFile").click());
 $("projectFile").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());$("title").value=d.title||"";$("story").value=d.story||"";$("cast").value=d.cast||"";$("look").value=d.look||$("look").options[0].value;$("length").value=d.length||"180";$("narration").value=d.narration||"";makeScenes();$("planStatus").textContent="Proyecto cargado. Se reconstruyeron las escenas a partir de la historia."; }catch(err){alert("No se pudo abrir el archivo JSON.")}});
