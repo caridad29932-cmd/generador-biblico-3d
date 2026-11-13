@@ -45,6 +45,20 @@ En BETANIA, pega la URL pública HTTPS de esta API y pulsa **Guardar conexión**
 - `GET /api/jobs/{prompt_id}`
 - `GET /api/jobs/{prompt_id}/video`
 
+## Ejecutar la API en Docker
+
+Si ComfyUI está instalado en el mismo servidor físico y escucha en el puerto 8188:
+
+```bash
+docker build -t betania-api .
+docker run --add-host=host.docker.internal:host-gateway -p 8000:8000 \
+  -e COMFYUI_URL=http://host.docker.internal:8188 \
+  -e BETANIA_ORIGIN=https://TU-USUARIO.github.io/TU-REPOSITORIO \
+  betania-api
+```
+
+ComfyUI debe escuchar en `0.0.0.0:8188` para que el contenedor pueda alcanzarlo. No publiques el puerto 8188 abierto a internet; expón solo la API HTTPS protegida por un proxy inverso.
+
 ## Importante
 
 El repositorio incluye el código, el workflow y la interfaz. No incluye una GPU remota, pesos del modelo (son archivos de varios GB), ni una URL pública de servidor. Por eso el render real solo queda activo después de desplegar esos componentes. No se ha simulado ninguna generación.
