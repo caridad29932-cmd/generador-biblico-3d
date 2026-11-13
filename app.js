@@ -1,5 +1,6 @@
 const $=id=>document.getElementById(id);
 let scenes=[];
+let referenceImageName="";
 const starters=[
 {title:"Apertura y contexto",purpose:"Establece el lugar, la época y la situación inicial."},
 {title:"Presentación de personajes",purpose:"Presenta a los protagonistas y sus relaciones mediante acciones y primeros planos."},
@@ -41,7 +42,21 @@ function backend(){return $("backend").value.trim().replace(/\/$/,"")}
 $("plan").addEventListener("click",makeScenes);
 $("cast").addEventListener("input",()=>{$("castPreview").textContent=$("cast").value});
 $("saveBackend").addEventListener("click",()=>{localStorage.setItem("betania_backend",backend());$("engineStatus").textContent="Dirección guardada en este dispositivo.";});
-$("backend").value=localStorage.getItem("betania_backend")||"";
+
+$("referenceImage").addEventListener("change",async e=>{
+ const file=e.target.files[0];if(!file)return;
+ if(!backend()){$("referenceStatus").textContent="Guarda primero la dirección del servidor GPU.";e.target.value="";return}
+ if(file.size>10*1024*1024){$("referenceStatus").textContent="La imagen supera 10 MB.";e.target.value="";return}
+ const form=new FormData();form.append("file",file);
+ $("referenceStatus").textContent="Subiendo imagen de referencia...";
+ try{
+  const r=await fetch(backend()+"/api/reference",{method:"POST",body:form});
+  if(!r.ok)throw Error("HTTP "+r.status);
+  const data=await r.json();referenceImageName=data.image_name;
+  $("referenceStatus").textContent="Referencia cargada. Se usará en cada escena enviada al motor.";
+ }catch(err){referenceImageName="";$("referenceStatus").textContent="No se pudo subir la referencia: "+err.message}
+});
+\n$("backend").value=localStorage.getItem("betania_backend")||"";
 async function testServer(){
  const url=backend();if(!url){$("engineStatus").textContent="Introduce la dirección de tu servidor.";return}
  $("engineStatus").textContent="Comprobando conexión...";
@@ -54,7 +69,7 @@ async function sendScene(i,button){
  if(!scenes[i])return;
  button.disabled=true;button.textContent="ENVIANDO...";
  try{
-  const r=await fetch(url+"/api/jobs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:scenes[i].prompt,scene_index:i+1,title:$("title").value})});
+  const r=await fetch(url+"/api/jobs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:scenes[i].prompt,scene_index:i+1,title:$("title").value,reference_image:referenceImageName||null})});
   if(!r.ok)throw Error("HTTP "+r.status);
   const data=await r.json();const id=data.job_id;
   if(!id)throw Error("El servidor no devolvió job_id.");
