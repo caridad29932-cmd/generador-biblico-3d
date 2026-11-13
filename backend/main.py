@@ -57,6 +57,7 @@ class JobRequest(BaseModel):
 def to_api_prompt(graph: dict, positive_prompt: str) -> dict:
     """Convert the official ComfyUI graph workflow into /prompt API format."""
     nodes = {str(node["id"]): node for node in graph.get("nodes", [])}
+    active_node_ids = {str(node["id"]) for node in graph.get("nodes", []) if int(node.get("mode", 0)) == 0}
     links = {}
     for link in graph.get("links", []):
         # ComfyUI graph link: [link_id, origin_node, origin_slot, target_node, target_slot, type]
@@ -85,7 +86,9 @@ def to_api_prompt(graph: dict, positive_prompt: str) -> dict:
         for item in node.get("inputs", []):
             link_id = item.get("link")
             if link_id is not None and str(link_id) in links:
-                inputs[item["name"]] = links[str(link_id)]
+                source = links[str(link_id)]
+                if source[0] in active_node_ids:
+                    inputs[item["name"]] = source
         names = widget_inputs.get(node_type, [])
         values = node.get("widgets_values", [])
         for index, name in enumerate(names):
