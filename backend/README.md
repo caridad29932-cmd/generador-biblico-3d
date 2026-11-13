@@ -45,6 +45,7 @@ En BETANIA, pega la URL pública HTTPS de esta API, escribe la misma clave en el
 - `POST /api/jobs` JSON: `{"prompt":"...","scene_index":1,"title":"Rut y Noemí","reference_image":"nombre.png"}`; `reference_image` es opcional.
 - `GET /api/jobs/{prompt_id}`
 - `GET /api/jobs/{prompt_id}/video`
+- `POST /api/assemble` JSON: `{"job_ids":["id-de-escena-1","id-de-escena-2"]}`; une clips terminados en un MP4 final.
 
 ## Ejecutar la API en Docker
 
