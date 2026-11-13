@@ -32,7 +32,7 @@ BOOZ: hombre adulto, aspecto noble, barba cuidada, túnica de trabajador acomoda
 <section class="panel">
 <div class="section-head"><div><span class="step">04</span><h2>Motor de video</h2></div><span class="pill" id="engineState">SIN CONECTAR</span></div>
 <p class="hint">BETANIA puede enviar cada escena a un servidor de generación compatible con ComfyUI. El servidor debe tener Wan 2.2 instalado y una plantilla de flujo configurada. La página por sí sola no ejecuta un modelo de video ni consume créditos externos.</p>
-<label for="backend">Dirección de tu servidor de video (API)</label><input id="backend" placeholder="https://tu-servidor/api">
+<label for="backend">Dirección de tu servidor de video (API)</label><input id="backend" placeholder="https://tu-servidor"><label for="apiKey">Clave privada del servidor (si configuraste una)</label><input id="apiKey" type="password" autocomplete="off" placeholder="BETANIA_API_KEY">
 <div class="actions"><button class="secondary" id="saveBackend">GUARDAR CONEXIÓN</button><button class="secondary" id="testBackend">PROBAR SERVIDOR</button></div>
 <div id="engineStatus" class="status" aria-live="polite">Pendiente de conectar un servidor GPU.</div>
 <div id="renderArea" class="render-area"><p class="muted">Cuando el motor esté conectado, aquí aparecerán los clips generados.</p></div>
