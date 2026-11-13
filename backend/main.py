@@ -1,6 +1,7 @@
 """BETANIA API: puente seguro entre la web y ComfyUI/Wan 2.2 TI2V-5B."""
 import json
 import os
+import secrets
 import uuid
 from pathlib import Path
 from urllib.parse import urlencode
@@ -67,8 +68,8 @@ def to_api_prompt(graph: dict, positive_prompt: str) -> dict:
                 value = values[index]
                 if node_type == "CLIPTextEncode" and node_id == "6":
                     value = positive_prompt
-                if node_type == "KSampler" and name == "seed" and value == "randomize":
-                    value = 0
+                if node_type == "KSampler" and name == "seed":
+                    value = secrets.randbelow(2**63)
                 inputs[name] = value
         if node_type == "CLIPTextEncode" and node_id == "6":
             inputs["text"] = positive_prompt
