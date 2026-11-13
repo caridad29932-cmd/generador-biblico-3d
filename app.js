@@ -56,9 +56,25 @@ async function sendScene(i,button){
  try{
   const r=await fetch(url+"/api/jobs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:scenes[i].prompt,scene_index:i+1,title:$("title").value})});
   if(!r.ok)throw Error("HTTP "+r.status);
-  const data=await r.json();button.textContent="TRABAJO ENVIADO";$("engineStatus").textContent="Trabajo "+(data.job_id||data.id||"enviado")+" recibido por el servidor.";
-  if(data.video_url){const v=document.createElement("video");v.controls=true;v.src=data.video_url;$("renderArea").append(v)}
- }catch(e){button.disabled=false;button.textContent="ENVIAR A MOTOR";$("engineStatus").textContent="No se pudo enviar. El backend debe implementar POST /api/jobs. "+e.message}
+  const data=await r.json();const id=data.job_id;
+  if(!id)throw Error("El servidor no devolvió job_id.");
+  button.textContent="GENERANDO...";$("engineStatus").textContent="Escena enviada. Esperando el render del servidor GPU...";
+  const started=Date.now();let done=false;
+  while(Date.now()-started<900000){
+   await new Promise(resolve=>setTimeout(resolve,5000));
+   const check=await fetch(url+"/api/jobs/"+encodeURIComponent(id));
+   if(!check.ok)throw Error("No se pudo consultar el trabajo: HTTP "+check.status);
+   const state=await check.json();
+   if(state.status==="completed"&&state.video_url){
+    const v=document.createElement("video");v.controls=true;v.src=state.video_url;
+    const title=document.createElement("p");title.textContent="Escena "+(i+1)+" — "+scenes[i].title;
+    $("renderArea").append(title,v);button.textContent="VIDEO LISTO";$("engineStatus").textContent="Escena "+(i+1)+" renderizada correctamente.";done=true;break;
+   }
+   if(state.status==="failed")throw Error(state.error||"El motor informó un error.");
+   $("engineStatus").textContent="Renderizando escena "+(i+1)+"... "+(state.status||"en cola");
+  }
+  if(!done)throw Error("El render sigue en proceso; vuelve a consultar el servidor.");
+ }catch(e){button.disabled=false;button.textContent="REINTENTAR ESCENA";$("engineStatus").textContent="No se completó la escena: "+e.message}
 }
 function projectData(){return {app:"BETANIA",version:1,title:$("title").value,story:$("story").value,cast:$("cast").value,look:$("look").value,length:$("length").value,narration:$("narration").value,scenes:scenes}}
 $("saveProject").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(projectData(),null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="betania-proyecto.json";a.click();URL.revokeObjectURL(a.href)});
