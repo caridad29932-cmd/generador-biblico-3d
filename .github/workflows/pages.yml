@@ -17,6 +17,12 @@ jobs:
       name: github-pages
     steps:
       - uses: actions/checkout@v4
+      - name: Validate JavaScript
+        run: node --check app.js
+      - name: Validate Python backend
+        run: python -m py_compile backend/main.py
+      - name: Validate Wan 2.2 workflow JSON
+        run: python -m json.tool backend/wan2_2_5b_t2v.json > /dev/null
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
