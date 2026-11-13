@@ -234,7 +234,7 @@ async def assemble_video(body: AssembleRequest, _auth=Depends(require_api_key)):
                 clip_path.write_bytes(video_response.content)
                 clip_paths.append(clip_path)
         concat_file = temp_dir / "clips.txt"
-        concat_file.write_text("".join(f"file '{path.name}'\\n" for path in clip_paths), encoding="utf-8")
+        concat_file.write_text("".join(f"file '{path.name}'\n" for path in clip_paths), encoding="utf-8")
         output_path = temp_dir / "BETANIA_pelicula_final.mp4"
         command = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file), "-c", "copy", "-movflags", "+faststart", str(output_path)]
         result = subprocess.run(command, capture_output=True, text=True, timeout=1800)
