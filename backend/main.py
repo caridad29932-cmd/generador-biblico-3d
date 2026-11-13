@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
@@ -28,6 +28,7 @@ class JobRequest(BaseModel):
     prompt: str = Field(min_length=5, max_length=12000)
     scene_index: int = Field(ge=1, le=100)
     title: str = Field(default="BETANIA", max_length=200)
+    reference_image: str | None = Field(default=None, max_length=500)
 
 
 def to_api_prompt(graph: dict, positive_prompt: str) -> dict:
@@ -47,6 +48,7 @@ def to_api_prompt(graph: dict, positive_prompt: str) -> dict:
         "ModelSamplingSD3": ["shift"],
         "Wan22ImageToVideoLatent": ["width", "height", "length", "batch_size"],
         "CreateVideo": ["fps"],
+        "LoadImage": ["image"],
         "SaveVideo": ["filename_prefix", "format", "codec"],
     }
     prompt = {}
@@ -98,12 +100,44 @@ async def health():
         return {"status": "backend_online", "engine": "Wan 2.2 pendiente de ComfyUI", "configured": False}
 
 
+
+@app.post("/api/reference")
+async def upload_reference(file: UploadFile = File(...)):
+    allowed = {"image/png", "image/jpeg", "image/webp"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=415, detail="Usa una imagen PNG, JPG o WEBP.")
+    content = await file.read()
+    if not content or len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="La imagen debe pesar menos de 10 MB.")
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            response = await client.post(
+                COMFYUI_URL + "/upload/image",
+                files={"image": (file.filename or "betania-reference.png", content, file.content_type)},
+                data={"type": "input", "overwrite": "true"},
+            )
+            response.raise_for_status()
+            result = response.json()
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"No se pudo subir la referencia a ComfyUI: {exc}") from exc
+    name = result.get("name")
+    subfolder = result.get("subfolder", "")
+    if not name:
+        raise HTTPException(status_code=502, detail="ComfyUI no devolvió el nombre del archivo.")
+    return {"image_name": f"{subfolder}/{name}" if subfolder else name, "status": "uploaded"}
+
 @app.post("/api/jobs")
 async def create_job(body: JobRequest):
     if not WORKFLOW_FILE.is_file():
         raise HTTPException(status_code=500, detail=f"No se encontró el workflow: {WORKFLOW_FILE}")
     try:
         graph = json.loads(WORKFLOW_FILE.read_text(encoding="utf-8"))
+        if body.reference_image:
+            image_node = next((node for node in graph.get("nodes", []) if node.get("type") == "LoadImage"), None)
+            if image_node is None:
+                raise ValueError("El workflow no contiene el nodo LoadImage.")
+            image_node["mode"] = 0
+            image_node["widgets_values"][0] = body.reference_image
         workflow = to_api_prompt(graph, body.prompt)
     except (ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
         raise HTTPException(status_code=500, detail=f"Workflow Wan 2.2 inválido: {exc}") from exc
